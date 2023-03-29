@@ -13,14 +13,14 @@ Routes:
 
 - [x] Register
 - [x] Login
-- [ ] Profile (Protected Route)
-- [ ] List Profiles
+- [x] Profile (Protected Route)
+- [x] List Profiles
 
 Bonus:
 
 - [ ] Code comments
-- [ ] Error Handling
-- [ ] Audit Logs
+- [x] Error Handling
+- [x] Audit Logs
 
 ## Additional
 
