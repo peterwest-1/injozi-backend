@@ -1,4 +1,5 @@
 import datetime
+from flask_mongoengine import MongoEngine as db
 
 
 class Profile(db.Document):

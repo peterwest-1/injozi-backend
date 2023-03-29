@@ -34,7 +34,7 @@ Bonus points (Not a must)
 - [ ] A simple design of the architecture
 - [x] Secure encryption on passwords
 - [x] Connecting the DB on https://www.mongodb.com/
-- [ ] Using a config file for importing passwords and settings that will help the application run
+- [x] Using a config file for importing passwords and settings that will help the application run
 - [ ] Simple Unit tests
 - [ ] Test cases
 
@@ -43,7 +43,8 @@ Bonus points (Not a must)
 ### Run
 
 ```
-flask --app hello run --debug
+flask --app injozi run
+flask --app injozi run --debug
 ```
 
 ### Virtual Environment

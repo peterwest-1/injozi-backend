@@ -1,7 +1,7 @@
 import datetime
 import os
 
-import yaml
+
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask import Flask, jsonify, request
@@ -13,8 +13,10 @@ from flask_jwt_extended import (
 )
 from flask_mongoengine import MongoEngine
 
+
 database_host = os.environ.get("DATABASE_HOST", False)
 database_name = os.environ.get("DATABASE_NAME", False)
+
 
 jwt_secret = os.environ.get("JWT_SECRET", False)
 
@@ -24,15 +26,9 @@ app = Flask(__name__)
 
 app.config["MONGODB_SETTINGS"] = {
     "host": database_host,
-    "db": database_name,
 }
 
 db = MongoEngine(app)
-
-jwt = JWTManager(app)
-
-app.config["JWT_SECRET_KEY"] = jwt_secret
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=1)
 
 
 class Profile(db.Document):
@@ -51,6 +47,12 @@ class User(db.Document):
     updated = db.DateTimeField(default=datetime.datetime.now())
 
 
+jwt = JWTManager(app)
+
+app.config["JWT_SECRET_KEY"] = jwt_secret
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=1)
+
+
 @app.route("/")
 def hello_world():
     return "Injozi Backend"
@@ -64,7 +66,7 @@ def register():
     user_found = User.objects(email=user["email"]).first()
 
     if user_found:
-        return jsonify({"message": "email already exists"}), 409
+        return jsonify({"message": "Email already exists"}), 409
     else:
         new_user = User(
             email=user["email"],
@@ -91,3 +93,55 @@ def login():
         else:
             return jsonify({"message": "The email or password is incorrect"}), 401
     return jsonify({"message": "The email or password is incorrect"}), 401
+
+
+@app.route("/api/v1/profiles", methods=["POST"])
+@jwt_required()
+def create_profile():
+    profile_information = request.get_json()
+    user_id = get_jwt_identity()
+    new_profile = Profile(
+        id_user=user_id,
+        name=profile_information["name"],
+        surname=profile_information["surname"],
+        phone=profile_information["phone"],
+    )
+    new_profile.save()
+    return jsonify({"message": "Profile created successfully"}), 201
+
+
+@app.route("/api/v1/profiles", methods=["GET"])
+def get_profiles():
+    profiles = Profile.objects()
+    return jsonify(profiles), 200
+
+
+@app.route("/api/v1/profiles/<id>", methods=["GET"])
+def get_profile_by_id(id):
+    profile = Profile.objects(id=id).first()
+    return jsonify(profile), 200
+
+
+# MARK: PUT or PATCH
+@app.route("/api/v1/users/<user_id>", methods=["PUT"])
+@jwt_required()
+def update_user(user_id):
+    current_user = get_jwt_identity()
+    if current_user != user_id:
+        return jsonify({"message": "You are not authorized to update this user"}), 401
+
+    user = User.objects(id=user_id).first()
+    user.update(**request.get_json())
+    return jsonify({"message": "User updated successfully"}), 200
+
+
+@app.route("/api/v1/users/<user_id>", methods=["DELETE"])
+@jwt_required()
+def delete_user(user_id):
+    current_user = get_jwt_identity()
+    if current_user != user_id:
+        return jsonify({"message": "You are not authorized to delete this user"}), 401
+
+    user = User.objects(id=user_id).first()
+    user.delete()
+    return jsonify({"message": "User deleted successfully"}), 200
