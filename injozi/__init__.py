@@ -1,4 +1,5 @@
 import datetime
+import os
 
 import yaml
 from argon2 import PasswordHasher
@@ -10,31 +11,44 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
-from pymongo import MongoClient
+from flask_mongoengine import MongoEngine
 
-with open("./config.yaml", "r") as file:
-    config = yaml.safe_load(file)
+database_host = os.environ.get("DATABASE_HOST", False)
+database_name = os.environ.get("DATABASE_NAME", False)
 
-# access values from the configuration file
-database_username = config["database"]["username"]
-database_password = config["database"]["password"]
-
-jwt_secret = config["jwt"]["secret"]
-
-
-client = MongoClient(
-    f"mongodb+srv://{database_username}:{database_password}@injozi-cluster.t2ykxiu.mongodb.net/?retryWrites=true&w=majority"
-)
-db = client["injozi"]
-users_collection = db["users"]
+jwt_secret = os.environ.get("JWT_SECRET", False)
 
 ph = PasswordHasher()
 
 app = Flask(__name__)
+
+app.config["MONGODB_SETTINGS"] = {
+    "host": database_host,
+    "db": database_name,
+}
+
+db = MongoEngine(app)
+
 jwt = JWTManager(app)
 
 app.config["JWT_SECRET_KEY"] = jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=1)
+
+
+class Profile(db.Document):
+    id_user = db.StringField(required=True)
+    name = db.StringField()
+    surname = db.StringField()
+    phone = db.StringField()
+    created = db.DateTimeField(default=datetime.datetime.now())
+    updated = db.DateTimeField(default=datetime.datetime.now())
+
+
+class User(db.Document):
+    email = db.StringField(required=True, unique=True)
+    password = db.StringField(required=True, min_length=6)
+    created = db.DateTimeField(default=datetime.datetime.now())
+    updated = db.DateTimeField(default=datetime.datetime.now())
 
 
 @app.route("/")
@@ -47,25 +61,23 @@ def register():
     user = request.get_json()
     user["password"] = ph.hash(user["password"])
 
-    doc = users_collection.find_one({"email": user["email"]})
-    if not doc:
-        users_collection.insert_one(
-            {
-                "email": user["email"],
-                "password": user["password"],
-                "created": datetime.datetime.now(),
-                "updated": datetime.datetime.now(),
-            }
-        )
-        return jsonify({"message": "User created successfully"}), 201
-    else:
+    user_found = User.objects(email=user["email"]).first()
+
+    if user_found:
         return jsonify({"message": "email already exists"}), 409
+    else:
+        new_user = User(
+            email=user["email"],
+            password=user["password"],
+        )
+        new_user.save()
+        return jsonify({"message": "User created successfully"}), 201
 
 
 @app.route("/api/v1/auth/login", methods=["POST"])
 def login():
     login_user = request.get_json()
-    user_from_db = users_collection.find_one({"email": login_user["email"]})
+    user_from_db = User.objects(email=login_user["email"]).first()
 
     if user_from_db:
         try:
