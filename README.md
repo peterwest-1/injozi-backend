@@ -11,8 +11,8 @@ Create a Python REST API utilising Flask with the following capabilities
 
 Routes:
 
-- [ ] Register
-- [ ] Login
+- [x] Register
+- [x] Login
 - [ ] Profile (Protected Route)
 - [ ] List Profiles
 
@@ -32,8 +32,8 @@ We would like for you to build your application to run on a docker container por
 Bonus points (Not a must)
 
 - [ ] A simple design of the architecture
-- [ ] Secure encryption on passwords
-- [ ] Connecting the DB on https://www.mongodb.com/
+- [x] Secure encryption on passwords
+- [x] Connecting the DB on https://www.mongodb.com/
 - [ ] Using a config file for importing passwords and settings that will help the application run
 - [ ] Simple Unit tests
 - [ ] Test cases
@@ -43,7 +43,7 @@ Bonus points (Not a must)
 ### Run
 
 ```
-flask --app hello run
+flask --app hello run --debug
 ```
 
 ### Virtual Environment
